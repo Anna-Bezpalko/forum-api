@@ -1,4 +1,6 @@
-const posts = [
+import type { Post } from "../dto/post.js"
+
+const posts: Post[] = [
   {
     id: 1,
     title: "Як вивчати JavaScript?",
@@ -36,7 +38,10 @@ const posts = [
   },
 ]
 
-export function getAll(category, take) {
+export function getAll(
+  category?: string,
+  take?: number,
+): Post[] {
   let result = [...posts]
 
   if (category) {
@@ -50,11 +55,11 @@ export function getAll(category, take) {
   return result
 }
 
-export function getById(id) {
+export function getById(id: number): Post | undefined {
   return posts.find((post) => post.id === id)
 }
 
-export function addPost(newPost) {
+export function addPost(newPost: Post): Promise<Post> {
   return new Promise((resolve) => {
     posts.push(newPost)
     resolve(newPost)
