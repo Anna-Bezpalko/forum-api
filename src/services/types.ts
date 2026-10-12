@@ -1,7 +1,7 @@
-import type { Post } from "../domain/post/entity.js"
+import type { Post, NewPost } from "../domain/post/entity.js";
 
 export interface PostService {
-  getPosts(category?: string, take?: number): Post[]
-  getPostById(id: number): Post | undefined
-  createPost(newPost: Post): Promise<Post>
+  getPosts(category?: string, take?: number): Promise<Post[]>;
+  getPostById(id: number): Promise<Post | undefined>;
+  createPost(newPost: NewPost): Promise<Post>;
 }
