@@ -1,32 +1,49 @@
-import type { Post, NewPost } from "../domain/post/entity.js"; 
-import type { Repository } from "../domain/post/repository.js"; 
-import { db } from "../prisma/db.js";
+import type { Post, NewPost } from "../domain/post/entity.js"; import type { Repository } from "../domain/post/repository.js"; import { db } from "../prisma/db.js";
+export function createPostRepository(): Repository { return { async getAll(category?: string, take?: number): Promise<Post[]> { if (category && take !== undefined) { return await db.orm.public.Post .where((post) => post.category.some({ name: category })) .include("category") .limit(take) .all(); }
+  if (category) {
+    return await db.orm.public.Post
+      .where((post) => post.category.some({ name: category }))
+      .include("category")
+      .all();
+  }
 
-export function createPostRepository(): Repository { 
-  return { 
-    async getAll(category?: string, take?: number): Promise<Post[]> { 
-      if (category && take !== undefined) { 
-        return db.orm.public.Post 
-        .where({ category }) 
-        .limit(take) 
-        .all(); }
-      if (category) {
-        return db.orm.public.Post.where({ category }).all();
-      }
-      if (take !== undefined) {
-        return db.orm.public.Post.limit(take).all();
-      }
-      return db.orm.public.Post.all();
-    },
+  if (take !== undefined) {
+    return await db.orm.public.Post
+      .include("category")
+      .limit(take)
+      .all();
+  }
 
-    async getById(id: number): Promise<Post | undefined> {
-      const post = await db.orm.public.Post.first({ id });
-      return post ?? undefined;
-    },
+  return await db.orm.public.Post
+    .include("category")
+    .all();
+},
 
-    async addPost(newPost: NewPost): Promise<Post> {
-      return db.orm.public.Post.create(newPost);
-    },
-  };  
-}
-  
+async getById(id: number): Promise<Post | undefined> {
+  const post = await db.orm.public.Post
+    .include("category")
+    .first({ id });
+
+  return post ?? undefined;
+},
+
+async addPost(newPost: NewPost): Promise<Post> {
+  const created = await db.orm.public.Post.create({
+    title: newPost.title,
+    content: newPost.content,
+    author: newPost.author,
+    category: (category) =>
+      category.connect({ id: newPost.categoryId }),
+  });
+
+  const post = await db.orm.public.Post
+    .include("category")
+    .first({ id: created.id });
+
+  if (!post) {
+    throw new Error("Created post not found");
+  }
+
+  return post;
+},
+}; }
