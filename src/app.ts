@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 
 import { createPostRepository } from "./repositories/post.js";
 import { createPostService } from "./services/post.js";
@@ -8,20 +9,31 @@ import { createCategoryRepository } from "./repositories/category.js";
 import { createCategoryService } from "./services/category.js";
 import { createCategoryRouter } from "./routers/category.js";
 
+import { createUserRepository } from "./repositories/user.js";
+import { createUserService } from "./services/user.js";
+import { createUserRouter } from "./routers/user.js";
+
 export function createApp() {
-const app = express();
+  const app = express();
 
-const postRepository = createPostRepository();
-const postService = createPostService(postRepository);
-const postRouter = createPostRouter(postService);
+  app.use(express.json());
+  app.use(cookieParser());
 
-const categoryRepository = createCategoryRepository();
-const categoryService = createCategoryService(categoryRepository);
-const categoryRouter = createCategoryRouter(categoryService);
+  const postRepository = createPostRepository();
+  const postService = createPostService(postRepository);
+  const postRouter = createPostRouter(postService);
 
-app.use(express.json());
-app.use(postRouter);
-app.use(categoryRouter);
+  const categoryRepository = createCategoryRepository();
+  const categoryService = createCategoryService(categoryRepository);
+  const categoryRouter = createCategoryRouter(categoryService);
 
-return app;
+  const userRepository = createUserRepository();
+  const userService = createUserService(userRepository);
+  const userRouter = createUserRouter(userService);
+
+  app.use(postRouter);
+  app.use(categoryRouter);
+  app.use(userRouter);
+
+  return app;
 }

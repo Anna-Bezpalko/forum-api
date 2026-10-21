@@ -4,11 +4,19 @@ export interface Category {
   createdAt: Date;
 }
 
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+
 export interface Post {
   id: number;
   title: string;
   content: string;
-  author: string;
+  authorId: number | null;
+  author: User | null;
   categoryId: number | null;
   category: Category | null;
   createdAt: Date;
@@ -17,6 +25,6 @@ export interface Post {
 export type NewPost = {
   title: string;
   content: string;
-  author: string;
+  authorId: number;
   categoryId: number;
 };

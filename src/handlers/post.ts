@@ -42,20 +42,18 @@ async postPost(
   req: Request<{}, {}, CreatePostDto>,
   res: Response,
 ) {
-  const { title, content, author, categoryId } = req.body;
+  const { title, content, authorId, categoryId } = req.body;
 
   if (
-    typeof title !== "string" ||
-    title.trim() === "" ||
-    typeof content !== "string" ||
-    content.trim() === "" ||
-    typeof author !== "string" ||
-    author.trim() === ""
-  ) {
-    return res.status(422).json({
-      message: "Invalid post data",
-    });
-  }
+  typeof title !== "string" ||
+  title.trim() === "" ||
+  typeof content !== "string" ||
+  content.trim() === ""
+) {
+  return res.status(422).json({
+    message: "Invalid post data",
+  });
+}
 
   if (
     typeof categoryId !== "number" ||
@@ -68,10 +66,10 @@ async postPost(
   }
 
   const newPost = {
-    title: title.trim(),
-    content: content.trim(),
-    author: author.trim(),
-    categoryId,
+  title: title.trim(),
+  content: content.trim(),
+  authorId: Number(req.body.authorId),
+  categoryId,
   };
 
   const post = await service.createPost(newPost);
