@@ -50,5 +50,31 @@ export function createUserRouter(service: UserService) {
     return res.status(401).json({ message: "Invalid refresh token" });
   }
 });
+router.post("/auth/logout", async (req, res) => {
+const token = req.cookies?.refreshToken;
+
+try {
+    if (token) {
+        await service.logout(token);
+    }
+
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+    });
+
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+    });
+
+    return res.status(200).json({ message: "Logout successful" });
+} catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+}
+});
 return router; 
 }

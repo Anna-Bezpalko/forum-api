@@ -1,4 +1,6 @@
 import jwt from "jsonwebtoken";
+import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;
@@ -16,6 +18,7 @@ export function createRefreshToken(userId: number, email: string): string {
 
   return jwt.sign({ userId, email }, REFRESH_SECRET, {
     expiresIn: "17d",
+    jwtid: randomUUID(),
   });
 }
 
@@ -34,5 +37,11 @@ export function verifyRefreshToken(token: string) {
   return jwt.verify(token, REFRESH_SECRET) as {
     userId: number;
     email: string;
+    jti: string;
+    exp: number;
   };
+}
+
+export function hashRefreshToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }

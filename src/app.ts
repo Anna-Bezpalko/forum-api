@@ -10,6 +10,7 @@ import { createCategoryService } from "./services/category.js";
 import { createCategoryRouter } from "./routers/category.js";
 
 import { createUserRepository } from "./repositories/user.js";
+import { createRefreshSessionRepository } from "./repositories/refreshSession.js";
 import { createUserService } from "./services/user.js";
 import { createUserRouter } from "./routers/user.js";
 
@@ -34,7 +35,8 @@ export function createApp() {
   const categoryRouter = createCategoryRouter(categoryService);
 
   const userRepository = createUserRepository();
-  const userService = createUserService(userRepository);
+  const refreshSessionRepository = createRefreshSessionRepository();
+  const userService = createUserService(userRepository, refreshSessionRepository);
   const userRouter = createUserRouter(userService);
 
   app.use(postRouter);

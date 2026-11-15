@@ -5,14 +5,15 @@ model User {
   name      String
   email     String   @unique
   password  String
-  createdAt DateTime @default(now())
+  createdAt DateTime(precision: 6) @default(now())
   posts     Post[]
+  refreshSessions RefreshSession[]
 }
 
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  createdAt DateTime @default(now())
+  createdAt DateTime(precision: 6) @default(now())
   posts     Post[]
 }
 
@@ -24,5 +25,16 @@ model Post {
   author     User?      @relation(fields: [authorId], references: [id])
   categoryId Int?
   category   Category? @relation(fields: [categoryId], references: [id])
-  createdAt  DateTime  @default(now())
+  createdAt DateTime(precision: 6) @default(now())
+}
+
+model RefreshSession {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tokenHash String   @unique
+  jwtId     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

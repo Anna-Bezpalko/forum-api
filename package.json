@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/orm-postgres": "^8.0.0-rc.17",
+    "@prisma/orm-postgres": "^8.0.0-rc.23",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -28,7 +28,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.5",
-    "prisma": "^8.0.0-rc.22",
+    "prisma": "^8.0.0-rc.33",
     "typescript": "^7.0.2"
   }
 }
