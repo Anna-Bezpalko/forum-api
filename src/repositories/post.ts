@@ -1,55 +1,65 @@
-import type { Post, NewPost } from "../domain/post/entity.js"; import type { Repository } from "../domain/post/repository.js"; import { db } from "../prisma/db.js";
-export function createPostRepository(): Repository { return { async getAll(category?: string, take?: number): Promise<Post[]> { if (category && take !== undefined) { return await db.orm.public.Post .where((post) => post.category.some({ name: category })) .include("category") .include("author") .limit(take) .all(); }
-  if (category) {
-    return await db.orm.public.Post
-      .where((post) => post.category.some({ name: category }))
-      .include("category")
-      .include("author")
-      .all();
-  }
+import type { NewPost, Post } from "../domain/post/entity.js";
+import type { Repository } from "../domain/post/repository.js";
+import type { Database } from "../prisma/db.js";
 
-  if (take !== undefined) {
-    return await db.orm.public.Post
-      .include("category")
-      .include("author")
-      .limit(take)
-      .all();
-  }
+export function createPostRepository(db: Database): Repository {
+  return {
+    async getAll(category?: string, take?: number): Promise<Post[]> {
+      if (category && take !== undefined) {
+        return await db.orm.public.Post.where((post) =>
+          post.category.some({ name: category }),
+        )
+          .include("category")
+          .include("author")
+          .limit(take)
+          .all();
+      }
+      if (category) {
+        return await db.orm.public.Post.where((post) =>
+          post.category.some({ name: category }),
+        )
+          .include("category")
+          .include("author")
+          .all();
+      }
 
-  return await db.orm.public.Post
-    .include("category")
-    .include("author")
-    .all();
-},
+      if (take !== undefined) {
+        return await db.orm.public.Post.include("category")
+          .include("author")
+          .limit(take)
+          .all();
+      }
 
-async getById(id: number): Promise<Post | undefined> {
-  const post = await db.orm.public.Post
-    .include("category")
-    .include("author")
-    .first({ id });
+      return await db.orm.public.Post.include("category")
+        .include("author")
+        .all();
+    },
 
-  return post ?? undefined;
-},
+    async getById(id: number): Promise<Post | undefined> {
+      const post = await db.orm.public.Post.include("category")
+        .include("author")
+        .first({ id });
 
-async addPost(newPost: NewPost): Promise<Post> {
-  const created = await db.orm.public.Post.create({
-    title: newPost.title,
-    content: newPost.content,
-    author: (author) =>
-      author.connect({ id: newPost.authorId }),
-    category: (category) =>
-      category.connect({ id: newPost.categoryId }),
-  });
+      return post ?? undefined;
+    },
 
-  const post = await db.orm.public.Post
-    .include("category")
-    .include("author")
-    .first({ id: created.id });
+    async addPost(newPost: NewPost): Promise<Post> {
+      const created = await db.orm.public.Post.create({
+        title: newPost.title,
+        content: newPost.content,
+        author: (author) => author.connect({ id: newPost.authorId }),
+        category: (category) => category.connect({ id: newPost.categoryId }),
+      });
 
-  if (!post) {
-    throw new Error("Created post not found");
-  }
+      const post = await db.orm.public.Post.include("category")
+        .include("author")
+        .first({ id: created.id });
 
-  return post;
-},
-}; }
+      if (!post) {
+        throw new Error("Created post not found");
+      }
+
+      return post;
+    },
+  };
+}

@@ -1,47 +1,24 @@
-import express from "express";
 import cookieParser from "cookie-parser";
-
-import { createPostRepository } from "./repositories/post.js";
-import { createPostService } from "./services/post.js";
-import { createPostRouter } from "./routers/post.js";
-
-import { createCategoryRepository } from "./repositories/category.js";
-import { createCategoryService } from "./services/category.js";
-import { createCategoryRouter } from "./routers/category.js";
-
-import { createUserRepository } from "./repositories/user.js";
-import { createRefreshSessionRepository } from "./repositories/refreshSession.js";
-import { createUserService } from "./services/user.js";
-import { createUserRouter } from "./routers/user.js";
-
 import cors from "cors";
+import express from "express";
+import { config } from "./config.js";
+import type { Container } from "./container.js";
 
-export function createApp() {
+export function createApp(container: Container) {
   const app = express();
 
-  app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
-}));
+  app.use(
+    cors({
+      origin: config.corsOrigin,
+      credentials: true,
+    }),
+  );
   app.use(express.json());
   app.use(cookieParser());
 
-  const postRepository = createPostRepository();
-  const postService = createPostService(postRepository);
-  const postRouter = createPostRouter(postService);
-
-  const categoryRepository = createCategoryRepository();
-  const categoryService = createCategoryService(categoryRepository);
-  const categoryRouter = createCategoryRouter(categoryService);
-
-  const userRepository = createUserRepository();
-  const refreshSessionRepository = createRefreshSessionRepository();
-  const userService = createUserService(userRepository, refreshSessionRepository);
-  const userRouter = createUserRouter(userService);
-
-  app.use(postRouter);
-  app.use(categoryRouter);
-  app.use(userRouter);
+  app.use(container.postRouter);
+  app.use(container.categoryRouter);
+  app.use(container.userRouter);
 
   return app;
 }

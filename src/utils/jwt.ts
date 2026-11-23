@@ -1,47 +1,48 @@
+import { createHash, randomUUID } from "node:crypto";
 import jwt from "jsonwebtoken";
-import { randomUUID } from "node:crypto";
-import { createHash } from "node:crypto";
+import { config } from "../config.js";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const REFRESH_SECRET = process.env.REFRESH_SECRET;
+export function createJwtService() {
+  const jwtSecret = config.jwtSecret;
+  const refreshSecret = config.refreshSecret;
 
-export function createAccessToken(userId: number, email: string): string {
-  if (!JWT_SECRET) throw new Error("JWT_SECRET is not configured");
+  if (!jwtSecret) throw new Error("JWT_SECRET is not configured");
+  if (!refreshSecret) throw new Error("REFRESH_SECRET is not configured");
 
-  return jwt.sign({ userId, email }, JWT_SECRET, {
-    expiresIn: "15m",
-  });
-}
+  return {
+    createAccessToken(userId: number, email: string): string {
+      return jwt.sign({ userId, email }, jwtSecret, {
+        expiresIn: "15m",
+      });
+    },
 
-export function createRefreshToken(userId: number, email: string): string {
-  if (!REFRESH_SECRET) throw new Error("REFRESH_SECRET is not configured");
+    createRefreshToken(userId: number, email: string): string {
+      return jwt.sign({ userId, email }, refreshSecret, {
+        expiresIn: "17d",
+        jwtid: randomUUID(),
+      });
+    },
 
-  return jwt.sign({ userId, email }, REFRESH_SECRET, {
-    expiresIn: "17d",
-    jwtid: randomUUID(),
-  });
-}
+    verifyAccessToken(token: string) {
+      return jwt.verify(token, jwtSecret) as {
+        userId: number;
+        email: string;
+      };
+    },
 
-export function verifyAccessToken(token: string) {
-  if (!JWT_SECRET) throw new Error("JWT_SECRET is not configured");
+    verifyRefreshToken(token: string) {
+      return jwt.verify(token, refreshSecret) as {
+        userId: number;
+        email: string;
+        jti: string;
+        exp: number;
+      };
+    },
 
-  return jwt.verify(token, JWT_SECRET) as {
-    userId: number;
-    email: string;
+    hashRefreshToken(token: string): string {
+      return createHash("sha256").update(token).digest("hex");
+    },
   };
 }
 
-export function verifyRefreshToken(token: string) {
-  if (!REFRESH_SECRET) throw new Error("REFRESH_SECRET is not configured");
-
-  return jwt.verify(token, REFRESH_SECRET) as {
-    userId: number;
-    email: string;
-    jti: string;
-    exp: number;
-  };
-}
-
-export function hashRefreshToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
+export type JwtService = ReturnType<typeof createJwtService>;

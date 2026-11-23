@@ -1,4 +1,4 @@
-import type { User, NewUser } from "./entity.js";
+import type { NewUser, User } from "./entity.js";
 
 export interface UserRepository {
   getById(id: number): Promise<User | undefined>;

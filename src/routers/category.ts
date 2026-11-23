@@ -1,19 +1,17 @@
 import { Router } from "express";
-import type { CategoryService } from "../services/category.js";
+import { ROUTES } from "../constants/index.js";
 import { createCategoryHandlers } from "../handlers/category.js";
+import type { CategoryService } from "../services/category.js";
 
 export function createCategoryRouter(service: CategoryService) {
-const router = Router();
+  const router = Router();
 
-const {
-getAllCategories,
-getCategory,
-postCategory,
-} = createCategoryHandlers(service);
+  const { getAllCategories, getCategory, postCategory } =
+    createCategoryHandlers(service);
 
-router.get("/categories", getAllCategories);
-router.get("/categories/:id", getCategory);
-router.post("/categories", postCategory);
+  router.get(ROUTES.categories, getAllCategories);
+  router.get(`${ROUTES.categories}/:id`, getCategory);
+  router.post(ROUTES.categories, postCategory);
 
-return router;
+  return router;
 }

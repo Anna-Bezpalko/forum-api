@@ -5,8 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node dist/server.js",
-    "build": "tsc"
+  "start": "node dist/server.js",
+  "build": "tsc",
+  "lint": "biome lint src",
+  "format": "biome format --write src",
+  "check": "biome check src"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +25,7 @@
     "temporal-polyfill": "^1.0.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.8",
     "@prisma/cli-engine": "^0.7.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",

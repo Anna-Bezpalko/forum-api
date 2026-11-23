@@ -1,115 +1,128 @@
-import bcrypt from "bcryptjs";
-import type { User, NewUser } from "../domain/user/entity.js";
-import type { UserRepository } from "../domain/user/repository.js";
 import type { RefreshSessionRepository } from "../domain/refresh-session/repository.js";
-import {
-createAccessToken,
-createRefreshToken,
-verifyRefreshToken,
-hashRefreshToken,
-} from "../utils/jwt.js";
+import type { NewUser, User } from "../domain/user/entity.js";
+import type { UserRepository } from "../domain/user/repository.js";
+import type { JwtService } from "../utils/jwt.js";
+import type { PasswordHasher } from "../utils/passwordHasher.js";
 
 export interface AuthTokens {
-accessToken: string;
-refreshToken: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
-export interface UserService {
-register(newUser: NewUser): Promise<User>;
-login(email: string, password: string): Promise<AuthTokens>;
-refresh(token: string): Promise<AuthTokens>;
-me(userId: number): Promise<{ id: number; email: string } | undefined>;
-logout(token: string): Promise<void>;
+export interface AuthService {
+  register(newUser: NewUser): Promise<User>;
+  login(email: string, password: string): Promise<AuthTokens>;
+  refresh(token: string): Promise<AuthTokens>;
+  me(userId: number): Promise<{ id: number; email: string } | undefined>;
+  logout(token: string): Promise<void>;
 }
 
-export function createUserService(
-repository: UserRepository,
-refreshSessionRepository: RefreshSessionRepository
-): UserService {
-return {
-    async logout(token: string): Promise<void> {
-    const tokenHash = hashRefreshToken(token);
-    await refreshSessionRepository.deleteByTokenHash(tokenHash);
-},
-async register(newUser: NewUser): Promise<User> {
-const existingUser = await repository.getByEmail(newUser.email);
-if (existingUser) throw new Error("EMAIL_ALREADY_EXISTS");
+export type UserService = AuthService;
 
-        const hashedPassword = await bcrypt.hash(newUser.password, 10);
+interface AuthServiceDependencies {
+  userRepository: UserRepository;
+  refreshSessionRepository: RefreshSessionRepository;
+  passwordHasher: PasswordHasher;
+  jwtService: JwtService;
+}
 
-        return repository.addUser({
-            name: newUser.name,
-            email: newUser.email,
-            password: hashedPassword,
-        });
+export function createAuthService({
+  userRepository,
+  refreshSessionRepository,
+  passwordHasher,
+  jwtService,
+}: AuthServiceDependencies): AuthService {
+  return {
+    async register(newUser: NewUser): Promise<User> {
+      const existingUser = await userRepository.getByEmail(newUser.email);
+
+      if (existingUser) {
+        throw new Error("EMAIL_ALREADY_EXISTS");
+      }
+
+      const hashedPassword = await passwordHasher.hash(newUser.password);
+
+      return userRepository.addUser({
+        name: newUser.name,
+        email: newUser.email,
+        password: hashedPassword,
+      });
     },
 
     async login(email: string, password: string): Promise<AuthTokens> {
-        const user = await repository.getByEmail(email);
+      const user = await userRepository.getByEmail(email);
 
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            throw new Error("INVALID_CREDENTIALS");
-        }
+      if (!user || !(await passwordHasher.compare(password, user.password))) {
+        throw new Error("INVALID_CREDENTIALS");
+      }
 
-        const accessToken = createAccessToken(user.id, user.email);
-        const refreshToken = createRefreshToken(user.id, user.email);
-        const payload = verifyRefreshToken(refreshToken);
+      const accessToken = jwtService.createAccessToken(user.id, user.email);
+      const refreshToken = jwtService.createRefreshToken(user.id, user.email);
+      const payload = jwtService.verifyRefreshToken(refreshToken);
 
-        await refreshSessionRepository.addSession({
-            userId: user.id,
-            tokenHash: hashRefreshToken(refreshToken),
-            jwtId: payload.jti,
-            expiresAt: new Date(payload.exp * 1000),
-        });
+      await refreshSessionRepository.addSession({
+        userId: user.id,
+        tokenHash: jwtService.hashRefreshToken(refreshToken),
+        jwtId: payload.jti,
+        expiresAt: new Date(payload.exp * 1000),
+      });
 
-        return { accessToken, refreshToken };
+      return { accessToken, refreshToken };
     },
 
     async refresh(token: string): Promise<AuthTokens> {
-        try {
-            const payload = verifyRefreshToken(token);
-            const user = await repository.getById(payload.userId);
+      try {
+        const payload = jwtService.verifyRefreshToken(token);
+        const user = await userRepository.getById(payload.userId);
 
-            if (!user || user.email !== payload.email) {
-                throw new Error("INVALID_REFRESH_TOKEN");
-            }
-
-            const tokenHash = hashRefreshToken(token);
-            const session = await refreshSessionRepository.getByTokenHash(tokenHash);
-
-            if (
-                !session ||
-                session.jwtId !== payload.jti ||
-                session.expiresAt <= new Date()
-            ) {
-                throw new Error("INVALID_REFRESH_TOKEN");
-            }
-
-            await refreshSessionRepository.deleteByTokenHash(tokenHash);
-
-            const accessToken = createAccessToken(user.id, user.email);
-            const refreshToken = createRefreshToken(user.id, user.email);
-            const newPayload = verifyRefreshToken(refreshToken);
-
-            await refreshSessionRepository.addSession({
-                userId: user.id,
-                tokenHash: hashRefreshToken(refreshToken),
-                jwtId: newPayload.jti,
-                expiresAt: new Date(newPayload.exp * 1000),
-            });
-
-            return { accessToken, refreshToken };
-        } catch {
-            throw new Error("INVALID_REFRESH_TOKEN");
+        if (!user || user.email !== payload.email) {
+          throw new Error("INVALID_REFRESH_TOKEN");
         }
+
+        const tokenHash = jwtService.hashRefreshToken(token);
+        const session =
+          await refreshSessionRepository.getByTokenHash(tokenHash);
+
+        if (
+          !session ||
+          session.jwtId !== payload.jti ||
+          session.expiresAt <= new Date()
+        ) {
+          throw new Error("INVALID_REFRESH_TOKEN");
+        }
+
+        await refreshSessionRepository.deleteByTokenHash(tokenHash);
+
+        const accessToken = jwtService.createAccessToken(user.id, user.email);
+        const refreshToken = jwtService.createRefreshToken(user.id, user.email);
+        const newPayload = jwtService.verifyRefreshToken(refreshToken);
+
+        await refreshSessionRepository.addSession({
+          userId: user.id,
+          tokenHash: jwtService.hashRefreshToken(refreshToken),
+          jwtId: newPayload.jti,
+          expiresAt: new Date(newPayload.exp * 1000),
+        });
+
+        return { accessToken, refreshToken };
+      } catch {
+        throw new Error("INVALID_REFRESH_TOKEN");
+      }
     },
 
-    async me(userId: number): Promise<{ id: number; email: string } | undefined> {
-        const user = await repository.getById(userId);
+    async me(
+      userId: number,
+    ): Promise<{ id: number; email: string } | undefined> {
+      const user = await userRepository.getById(userId);
 
-        if (!user) return undefined;
+      if (!user) return undefined;
 
-        return { id: user.id, email: user.email };
+      return { id: user.id, email: user.email };
     },
-};
+
+    async logout(token: string): Promise<void> {
+      const tokenHash = jwtService.hashRefreshToken(token);
+      await refreshSessionRepository.deleteByTokenHash(tokenHash);
+    },
+  };
 }

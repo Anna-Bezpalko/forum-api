@@ -1,9 +1,10 @@
-import "dotenv/config"; 
 import { createApp } from "./app.js";
+import { config } from "./config.js";
+import { createContainer } from "./container.js";
 
-const app = createApp(); 
-const PORT = 3000;
+const container = createContainer();
+const app = createApp(container);
 
-app.listen(PORT, () => { 
-    console.log(`Server is running on http://localhost:${PORT}`); 
+app.listen(config.port, () => {
+  console.log(`Server is running on http://localhost:${config.port}`);
 });

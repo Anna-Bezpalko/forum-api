@@ -1,7 +1,7 @@
-import type { RefreshSession, NewRefreshSession } from "./entity.js";
+import type { NewRefreshSession, RefreshSession } from "./entity.js";
 
 export interface RefreshSessionRepository {
-    addSession(session: NewRefreshSession): Promise<RefreshSession>;
-    getByTokenHash(tokenHash: string): Promise<RefreshSession | undefined>;
-    deleteByTokenHash(tokenHash: string): Promise<void>;
+  addSession(session: NewRefreshSession): Promise<RefreshSession>;
+  getByTokenHash(tokenHash: string): Promise<RefreshSession | undefined>;
+  deleteByTokenHash(tokenHash: string): Promise<void>;
 }
